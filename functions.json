@@ -1,0 +1,18 @@
+{
+
+  "bindings": [
+    {
+      "type": "kafkaTrigger",
+      "consumerGroup": "azfunc",
+      "protocol": "saslSsl",
+      "authenticationMode": "plain",
+      "username": "<KafkaAPIKey>",
+      "password": "<KakfaSecret>",
+      "sslCaLocation": "<RootCertificateFile>",
+      "topic": "<KafkaTopicName>",
+      "brokerList": "<Server>.eastus.azure.confluent.cloud:9092",
+      "name": "kafkaEvent"
+    }
+  ]
+
+}
