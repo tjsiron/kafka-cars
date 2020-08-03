@@ -23,36 +23,22 @@ namespace KafkaCars
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             [Kafka(BrokerList = "my-confluent-oss-cp-kafka-headless.default.svc:9092")] IAsyncCollector<KafkaEventData<string, CarRecord>> events)
-
         {
             CarRecord newCar = JsonConvert.DeserializeObject<CarRecord>(await new StreamReader(req.Body).ReadToEndAsync());
             newCar.CarId = Guid.NewGuid().ToString();
-
-            var config = new ProducerConfig
+            
+            try
             {
-                BootstrapServers = "my-confluent-oss-cp-kafka-headless:9092"
-            };
-
-            var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = "my-confluent-oss-cp-schema-registry.default.svc:8081" });
-
-            using (var p = new ProducerBuilder<string, CarRecord>(config)
-                .SetKeySerializer(new AvroSerializer<string>(schemaRegistry).AsSyncOverAsync())
-                .SetValueSerializer(new AvroSerializer<CarRecord>(schemaRegistry).AsSyncOverAsync())
-                .Build())
+                await events.AddAsync(new KafkaEventData<string, CarRecord>()
+                {
+                    Key = Guid.NewGuid().ToString(),
+                    Value = newCar,
+                    Topic = "cars"
+                });
+            }
+            catch (Exception e)
             {
-                try
-                {
-                    await events.AddAsync(new KafkaEventData<string, CarRecord>()
-                    {
-                        Key = Guid.NewGuid().ToString(),
-                        Value = newCar,
-                        Topic = "cars"
-                    });
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Delivery failed: {e.Message }");
-                }
+                Console.WriteLine($"Delivery failed: {e.Message }");
             }
 
             return new OkResult();
